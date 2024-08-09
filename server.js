@@ -8,9 +8,14 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-const lista = [];
+const lista = [
+    { id: 1, name: 'Song 1', music: 'Artist 1', table: '10' },
+    { id: 2, name: 'Song 2', music: 'Artist 2', table: '10' },
+    { id: 3, name: 'Song 3', music: 'Artist 3', table: '10' },
+    { id: 4, name: 'Song 4', music: 'Artist 4', table: '10' },
 
-console.log(process.env)
+];
+
 app.get('/', (req, res) => {
     res.sendFile(process.env.INIT_CWD + '/index.html');
 })

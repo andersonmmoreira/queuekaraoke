@@ -11,12 +11,11 @@
         <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRkkQ3oke6l4C7cvDUqYAkJkl0VZqGH6fRDAg&s" width="100px" alt="">    
     </header>
     <h2 class="text-center">Karaôke</h2>
-    <main class="w-[50%] p-10 mx-auto">
+    <main class="w-[100%] p-5 mx-auto">
         <div class="w-full max-w-md mx-auto bg-white shadow-lg rounded-lg p-6">
             <h1 class="text-2xl font-bold mb-4 text-gray-800">Lista de Músicas</h1>
             
-            <!-- Campos para adicionar novas tarefas -->
-            <div class="mb-4">
+            <div class="mb-4 ">
                 <input 
                     id="person-name" 
                     type="text" 
@@ -32,8 +31,9 @@
                     type="text" 
                     placeholder="Número da mesa" 
                     class="w-full px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2">
+                
                 <button 
-                    onclick="addTask()" 
+                    onclick="saveMusic()" 
                     class="mt-2 w-full bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     Adicionar
                 </button>
@@ -43,12 +43,113 @@
             <ul id="task-list" class="list-disc pl-5">
                 <!-- Tarefas serão adicionadas aqui -->
             </ul>
+
+            <table class="table-auto">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Música</th>
+                        <th>Mesa</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="music-table">
+                    
+                </tbody>
+            </table>
         </div>
     </main>
-    <footer></footer>
+    <footer>
 
-    <script src="server.js">
-       
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+
+        let lista = []
+
+        function getList() {
+            document.getElementById('music-table').innerHTML = ''
+            lista.map((music, indice) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${music.name}</td>
+                    <td>${music.music}</td>
+                    <td>${music.table}</td>
+                    <td>
+                        <button onclick="deleteMusic(${indice})">Deletar</button>
+                    </td>
+                `;
+                document.getElementById('music-table').appendChild(row);
+            });
+        }
+
+        function getListMusic() {
+            
+            axios.get('/musicas')
+            .then(function(response) {
+                lista = response.data;
+                document.getElementById('music-table').innerHTML = ''
+                response.data.map((music, indice) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${music.name}</td>
+                        <td>${music.music}</td>
+                        <td>${music.table}</td>
+                        <td>
+                            <button onclick="deleteMusic(${indice})">Deletar</button>
+                        </td>
+                    `;
+                    document.getElementById('music-table').appendChild(row);
+                });
+            })
+            .catch(function(error) {
+                alert(error.message)
+            });;       
+        }
+        getListMusic()
+
+        function saveMusic() {
+            const name = document.getElementById("person-name").value
+            const music = document.getElementById("music-name").value
+            const table = document.getElementById("table-number").value
+
+            const task = {
+                name,
+                music,
+                table
+            };
+
+            axios.post('/musicas', task)
+            .then(function(response) {
+                alert("Música Adicionada com Sucesso")
+                lista.push(task)
+                getList();
+                document.getElementById("person-name").value = ''
+                document.getElementById("music-name").value = ''
+                document.getElementById("table-number").value = ''
+            })
+            .catch(function(error) {
+                alert(error.message)
+            });               
+        }
+
+        function deleteMusic(indice) {
+           
+            const check = confirm("Deseja deletar a Musica?");
+            if(check) {
+                axios.delete('/musicas/'+indice)
+                .then(function(response) {
+                    alert("Música Deletada com Sucesso")
+                    lista.splice(indice, 1)
+                    getList();
+                })
+                .catch(function(error) {
+                    alert(error.message)
+                });
+            }
+            
+                        
+        }
     </script>
 </body>
 </html>
