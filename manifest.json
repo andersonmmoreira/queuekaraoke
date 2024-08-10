@@ -1,0 +1,25 @@
+{
+    "name": "Karaoke App",
+    "short_name": "Karaoke",
+    "description": "A Progressive Web App for managing a karaoke queue.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#ff6600",
+    "orientation": "portrait",
+    "icons": [
+      {
+        "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRkkQ3oke6l4C7cvDUqYAkJkl0VZqGH6fRDAg&s",
+        "type": "image/png",
+        "sizes": "192x192"
+      },
+      {
+        "src": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRkkQ3oke6l4C7cvDUqYAkJkl0VZqGH6fRDAg&s",
+        "type": "image/png",
+        "sizes": "512x512"
+      }
+    ],
+    "lang": "en-US",
+    "dir": "ltr"
+  }
+  

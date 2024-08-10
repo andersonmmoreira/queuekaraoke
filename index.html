@@ -5,12 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Karaoke - Master Pizza</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="manifest" href="/manifest.json">
+
 </head>
 <body>
     <header class="flex justify-center items-center h-32 bg-black">
         <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRkkQ3oke6l4C7cvDUqYAkJkl0VZqGH6fRDAg&s" width="100px" alt="">    
     </header>
-    <h2 class="text-center text-3xl mt-3">Karaôke</h2>
+    <h2 class="text-center text-3xl mt-3">Karaôke v1.0.1</h2>
     <main class="w-[100%] p-5 mx-auto">
         <div class="w-full max-w-md mx-auto bg-white shadow-lg rounded-lg p-6">
             <h1 class="text-2xl font-bold mb-4 text-gray-800 text-center">Playlist</h1>
@@ -68,30 +70,12 @@
     <script>
 
         const baseURL = 'https://queuekaraoke.vercel.app/';
-        let lista = []
-
-        function getList() {
-            document.getElementById('music-table').innerHTML = ''
-            lista.map((music, indice) => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${indice}</td>
-                    <td>${music.name}</td>
-                    <td>${music.music}</td>
-                    <td>${music.table}</td>
-                    <td>
-                        <button onclick="deleteMusic(${music.id})">Deletar</button>
-                    </td>
-                `;
-                document.getElementById('music-table').appendChild(row);
-            });
-        }
-
+       
         function getListMusic() {
             
             axios.get(baseURL+'musicas')
             .then(function(response) {
-                lista = response.data;
+                let lista = response.data;
                 document.getElementById('music-table').innerHTML = ''
                 response.data.map((music, indice) => {
                     const row = document.createElement('tr');
@@ -101,7 +85,7 @@
                         <td>${music.music}</td>
                         <td>${music.table}</td>
                         <td>
-                            <button class="w-full bg-red-500 text-white px-4 py-2 rounded-lg shadow hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500" onclick="deleteMusic(${indice})">Deletar</button>
+                            <button class="w-full bg-red-500 text-white px-4 py-2 rounded-lg shadow hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500" onclick="deleteMusic(${music.id})">Deletar</button>
                         </td>
                     `;
                     document.getElementById('music-table').appendChild(row);
@@ -112,10 +96,10 @@
             });;       
         }
 
-        
+        getListMusic();
         setInterval(function() {
             getListMusic();
-        }, 2000)
+        }, 1000)
         
 
         function saveMusic() {
@@ -141,9 +125,7 @@
 
             axios.post(baseURL+'musicas', task)
             .then(function(response) {
-                
-                lista.push(task)
-                getList();
+                getListMusic()
                 document.getElementById("person-name").value = ''
                 document.getElementById("music-name").value = ''
                 document.getElementById("table-number").value = ''
@@ -154,8 +136,6 @@
         }
 
         function deleteMusic(id) {
-           
-  
 
             Swal.fire({
                 title: "Deseja deletar a Musica?",
@@ -169,9 +149,9 @@
                 if (result.isConfirmed) {
                     axios.delete(baseURL+'musicas/'+id)
                     .then(function(response) {
-                        
-                        lista.splice(indice, 1)
-                        getList();
+                        getListMusic();
+                       
+                       
                     })
                     .catch(function(error) {
                         alert(error.message)
