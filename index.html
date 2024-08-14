@@ -12,10 +12,12 @@
     <header class="flex justify-center items-center h-32 bg-black">
         <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRkkQ3oke6l4C7cvDUqYAkJkl0VZqGH6fRDAg&s" width="100px" alt="">    
     </header>
-    <h2 class="text-center text-3xl mt-3">Karaôke v1.0.1</h2>
+    <h2 class="text-center text-3xl mt-3">Karaôke</h2>
     <main class="w-[100%] p-5 mx-auto">
         <div class="w-full max-w-md mx-auto bg-white shadow-lg rounded-lg p-6">
-            <h1 class="text-2xl font-bold mb-4 text-gray-800 text-center">Playlist</h1>
+            <h1 id="status" class="text-2xl font-bold mb-4 text-gray-800 text-center">
+                Playlist
+            </h1>
             
             <div class="mb-4 ">
                 <input 
@@ -36,6 +38,7 @@
                 
                 <button 
                     onclick="saveMusic()" 
+                    id="salvar"
                     class="mt-2 w-full bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     Salvar
                 </button>
@@ -62,81 +65,32 @@
             </table>
         </div>
     </main>
-    <footer>
-
+    <footer class="text-center">
+        <small>
+            v.1.0.2 
+            <br>
+            Desenvolvidor por Anderson Moreira
+            <br> Apoio: Márcio Ferreira
+        </small>
     </footer>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script>
 
         const baseURL = 'https://queuekaraoke.vercel.app/';
-       
-        function getListMusic() {
+        // const baseURL = 'http://localhost:3000/';
+        const socket = io(baseURL);
+
+        let lista = [];
+
+        function setStatus(text = 'PlayList') {
+            document.getElementById('status').innerHTML = text;
+        }
+
+        function deleteMusic(item) {
             
-            axios.get(baseURL+'musicas')
-            .then(function(response) {
-                let lista = response.data;
-                document.getElementById('music-table').innerHTML = ''
-                response.data.map((music, indice) => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${indice}</td>
-                        <td class="text-1xl">${music.name}</td>
-                        <td>${music.music}</td>
-                        <td>${music.table}</td>
-                        <td>
-                            <button class="w-full bg-red-500 text-white px-4 py-2 rounded-lg shadow hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500" onclick="deleteMusic(${music.id})">Deletar</button>
-                        </td>
-                    `;
-                    document.getElementById('music-table').appendChild(row);
-                });
-            })
-            .catch(function(error) {
-                alert(error.message)
-            });;       
-        }
-
-        getListMusic();
-        setInterval(function() {
-            getListMusic();
-        }, 1000)
-        
-
-        function saveMusic() {
-            const name = document.getElementById("person-name").value
-            const music = document.getElementById("music-name").value
-            const table = document.getElementById("table-number").value
-
-
-            if(name === '' || music === '' || table === '') {
-                // alert('Todos os campos são obrigatórios!')
-                Swal.fire({
-                    icon: "error",
-                    title: "Oops...",
-                    text: "Todos os campos são obrigatórios!"
-                });
-                return;
-            }
-            const task = {
-                name,
-                music,
-                table
-            };
-
-            axios.post(baseURL+'musicas', task)
-            .then(function(response) {
-                getListMusic()
-                document.getElementById("person-name").value = ''
-                document.getElementById("music-name").value = ''
-                document.getElementById("table-number").value = ''
-            })
-            .catch(function(error) {
-                alert(error.message)
-            });               
-        }
-
-        function deleteMusic(id) {
-
+            setStatus("Deletando")
             Swal.fire({
                 title: "Deseja deletar a Musica?",
                 icon: "info",
@@ -147,24 +101,72 @@
                 }).then((result) => {
                 /* Read more about isConfirmed, isDenied below */
                 if (result.isConfirmed) {
-                    axios.delete(baseURL+'musicas/'+id)
-                    .then(function(response) {
-                        getListMusic();
-                       
-                       
-                    })
-                    .catch(function(error) {
-                        alert(error.message)
-                    });
+                    socket.emit('remove_music', item);
                 } else if (result.isDenied) {
-                    
                 }
-                });
-
-           
-            
-                        
+            });         
+            setStatus()
         }
+       
+        function reloadTable() {
+            document.getElementById('music-table').innerHTML = ''
+            lista.map((music, indice) => {
+                const row = document.createElement('tr');
+                const { id } = music;
+                row.innerHTML = `
+                    <td>${indice + 1}</td>
+                    <td class="text-1xl">${music.name}</td>
+                    <td>${music.music}</td>
+                    <td>${music.table}</td>
+
+                    <td>
+                        <button 
+                            class="w-full bg-red-500 text-white px-4 py-2 rounded-lg shadow hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500" 
+                            onclick="deleteMusic('${id}')">
+                            Deletar
+                        </button>
+                        
+                    </td>
+                `;
+                document.getElementById('music-table').appendChild(row);
+            });
+        }
+        reloadTable()
+        socket.on('actually', (data) => {
+            setStatus("Sincronizando")
+            lista = data;
+            reloadTable()
+            setStatus()
+        });
+        
+        function saveMusic() {
+            const name = document.getElementById("person-name").value
+            const music = document.getElementById("music-name").value
+            const table = document.getElementById("table-number").value
+
+            if(name === '' || music === '' || table === '') {
+                // alert('Todos os campos são obrigatórios!')
+                Swal.fire({
+                    icon: "error",
+                    title: "Oops...",
+                    text: "Todos os campos são obrigatórios!"
+                });
+                return;
+            }
+            const data = {
+                name,
+                music,
+                table
+            };
+            setStatus("Salvando")
+            socket.emit('save_music', data);
+
+            document.getElementById("person-name").value = ''
+            document.getElementById("music-name").value = ''
+            document.getElementById("table-number").value = ''
+        }
+
+        
     </script>
 </body>
 </html>

@@ -1,15 +1,31 @@
 import express from 'express';
 import cors from 'cors';
+
 import { v4 as uuidv4 } from 'uuid';
+import { Server } from 'socket.io';
+import http from 'http';
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-const lista = [];
+const server = http.createServer(app, {
+    cors: {
+        origin: '*',
+        methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    },
+});
 
-app.get('/', (req, res) => {
+const io = new Server(server, {
+    cors: {
+        origin: '*',
+        methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    },
+});
+const lista = [
     
+];
+app.get('/', (req, res) => {
     return res.send("Hello Karaoke")
 })
 
@@ -39,7 +55,41 @@ app.delete('/musicas/:id', (req, res) => {
     return res.status(200).json({ message: 'Música Removida com Sucesso.'})
 })
 
-app.listen(3000, 'localhost', () => {
+app.use('**', (request, response) => {
+    response.status(404).send('Página não encontrada.');
+})
+
+app.use((error, request, response, next) => {
+    console.error(error.stack);
+    response.status(500).send({ error: 'Something went wrong.' });
+})
+
+io.on('connection', (socket) => {
+    socket.emit('actually', lista);
+    
+    socket.on('update_music', (data) => {
+        const indice = lista.findIndex(item => item.id === data.id);
+        lista[indice] = data;
+        socket.broadcast.emit('send_music', data);
+    });
+
+    socket.on('remove_music', (data) => {
+        const indice = lista.findIndex(item => item.id === data.id);
+        lista.splice(indice, 1);
+        socket.broadcast.emit('actually', lista);
+        socket.emit('actually', lista);
+    });
+    
+    socket.on('save_music', (data) => {
+        const myUUID = uuidv4();
+        data.id = myUUID;
+        lista.push(data);
+        socket.broadcast.emit('actually', lista);
+        socket.emit('actually', lista);
+    });
+});
+
+server.listen(3000, 'localhost', () => {
     console.log('Server is running on port http://localhost:3000');
 });
 
