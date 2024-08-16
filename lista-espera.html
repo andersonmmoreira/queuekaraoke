@@ -12,12 +12,12 @@
     <header class="flex justify-center items-center h-32 bg-black">
         <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRkkQ3oke6l4C7cvDUqYAkJkl0VZqGH6fRDAg&s" width="100px" alt="">    
     </header>
-    <h2 class="text-center text-3xl mt-3" id="status">Karaôke - Playlist</h2>
+    <h2 class="text-center text-3xl mt-3"  id="status">Karaôke - Lista de Espera</h2>
     <div class="text-center mt-2">
         <a 
-            href="/lista-espera"
+            href="/"
             class=" mt-2 w-full bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
-            Fila de Espera
+            PlayList
         </a>
     </div>
     <main class="w-[100%] p-5 mx-auto">
@@ -87,9 +87,34 @@
         const socket = io();
 
         let lista = [];
- 
-        function setStatus(text = 'PlayList') {
+        let lista_espera = [];
+
+        function setStatus(text = 'Lista de Espera') {
             document.getElementById('status').innerHTML = text;
+        }
+
+        
+
+        function enviarPlayList(id) {
+            
+            setStatus("Enviando")
+            Swal.fire({
+                title: "Deseja enviar a Musica para a PLayList?",
+                icon: "info",
+                showDenyButton: true,
+                showCancelButton: true,
+                confirmButtonText: "Sim",
+                denyButtonText: `Não`
+                }).then((result) => {
+                /* Read more about isConfirmed, isDenied below */
+                if (result.isConfirmed) {
+                    socket.emit('remove_music_espera', id);
+                    const indice = lista.findIndex(item => item.id === id)
+                    socket.emit('save_music', lista[indice]);
+                } else if (result.isDenied) {
+                }
+            });         
+            setStatus()
         }
 
         function deleteMusic(item) {
@@ -105,7 +130,7 @@
                 }).then((result) => {
                 /* Read more about isConfirmed, isDenied below */
                 if (result.isConfirmed) {
-                    socket.emit('remove_music', item);
+                    socket.emit('remove_music_espera', item);
                 } else if (result.isDenied) {
                 }
             });         
@@ -125,6 +150,11 @@
 
                     <td>
                         <button 
+                            class="w-full bg-blue-500 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                            onclick="enviarPlayList('${id}')">
+                            Enviar para PlayList
+                        </button>
+                        <button 
                             class="w-full bg-red-500 text-white px-4 py-2 rounded-lg shadow hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500" 
                             onclick="deleteMusic('${id}')">
                             Deletar
@@ -137,7 +167,7 @@
         }
         
         reloadTable()
-        socket.on('actually', (data) => {
+        socket.on('actually_espera', (data) => {
             setStatus("Sincronizando")
             lista = data;
             reloadTable()
@@ -164,7 +194,7 @@
                 table
             };
             setStatus("Salvando")
-            socket.emit('save_music', data);
+            socket.emit('save_music_espera', data);
 
             document.getElementById("person-name").value = ''
             document.getElementById("music-name").value = ''

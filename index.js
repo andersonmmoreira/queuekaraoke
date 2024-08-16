@@ -9,8 +9,6 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-
-
 const server = http.createServer(app, {
     cors: {
         origin: '*',
@@ -24,37 +22,16 @@ const io = new Server(server, {
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
     },
 });
-const lista = [
-    
-];
+
+const lista = [];
+const lista_espera = [];
+
 app.get('/', (req, res) => {
     return res.sendFile(process.cwd() + '/index.html')
 })
 
-app.get('/musicas', (req, res) => {
-    return res.status(200).json(lista)
-})
-
-app.post('/musicas', (req, res) => {
-    const body = req.body;
-    const myUUID = uuidv4();
-    body.id = myUUID;
-    lista.push(body);
-    return res.status(200).json({ message: 'Música Salva com Sucesso.'})
-})
-
-app.put('/musicas/:indice', (req, res) => {
-    const indice = req.params.indice;
-    const body = req.body;
-    const indiceLista = lista.findIndex(indiceLista => indice === indiceLista)
-    return res.status(200).json({ message: 'Música Atualizada com Sucesso.'})
-})
-
-app.delete('/musicas/:id', (req, res) => {
-    const id = req.params.id;
-    const indice = lista.findIndex(item => item.id === id)
-    lista.splice(indice, 1);
-    return res.status(200).json({ message: 'Música Removida com Sucesso.'})
+app.get('/lista-espera', (req, res) => {
+    return res.sendFile(process.cwd() + '/lista-espera.html')
 })
 
 app.use('**', (request, response) => {
@@ -75,20 +52,50 @@ io.on('connection', (socket) => {
         socket.broadcast.emit('send_music', data);
     });
 
-    socket.on('remove_music', (data) => {
-        const indice = lista.findIndex(item => item.id === data.id);
+    socket.on('remove_music', (id) => {
+        const indice = lista.findIndex(item => item.id === id);
         lista.splice(indice, 1);
+
         socket.broadcast.emit('actually', lista);
         socket.emit('actually', lista);
     });
     
     socket.on('save_music', (data) => {
         const myUUID = uuidv4();
-        data.id = myUUID;
+        if(!data.id) {
+            console.log(data)
+            data.id = myUUID;
+        }
+        
         lista.push(data);
         socket.broadcast.emit('actually', lista);
         socket.emit('actually', lista);
     });
+
+    // ------------- LISTA ESPERA ---------------
+    socket.emit('actually_espera', lista_espera);
+    
+    socket.on('update_music_espera', (data) => {
+        const indice = lista_espera.findIndex(item => item.id === data.id);
+        lista_espera[indice] = data;
+        socket.broadcast.emit('send_music_espera', data);
+    });
+
+    socket.on('remove_music_espera', (id) => {
+        const indice = lista_espera.findIndex(item => item.id === id);
+        lista_espera.splice(indice, 1);
+        socket.broadcast.emit('actually_espera', lista_espera);
+        socket.emit('actually_espera', lista_espera);
+    });
+    
+    socket.on('save_music_espera', (data) => {
+        const myUUID = uuidv4();
+        data.id = myUUID;
+        lista_espera.push(data);
+        socket.broadcast.emit('actually_espera', lista_espera);
+        socket.emit('actually_espera', lista_espera);
+    });
+    
 });
 
 server.listen(3000, 'localhost', () => {
