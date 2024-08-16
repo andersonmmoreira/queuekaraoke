@@ -9,6 +9,8 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+
+
 const server = http.createServer(app, {
     cors: {
         origin: '*',
@@ -26,7 +28,7 @@ const lista = [
     
 ];
 app.get('/', (req, res) => {
-    return res.send("Hello Karaoke")
+    return res.sendFile(process.cwd() + '/index.html')
 })
 
 app.get('/musicas', (req, res) => {
