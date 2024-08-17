@@ -84,12 +84,32 @@
 
         // const baseURL = 'https://queuekaraoke.vercel.app/';
         // const baseURL = 'http://localhost:3000/';
+        
         const socket = io();
-
         let lista = [];
  
         function setStatus(text = 'PlayList') {
             document.getElementById('status').innerHTML = text;
+        }
+
+        function alterarStatus(id, music) {
+            
+            setStatus("Alterando Status")
+            Swal.fire({
+                title: `Deseja finalizar a Musica ${music}?`,
+                icon: "info",
+                showDenyButton: true,
+                showCancelButton: true,
+                confirmButtonText: "Sim",
+                denyButtonText: `Não`
+                }).then((result) => {
+                /* Read more about isConfirmed, isDenied below */
+                if (result.isConfirmed) {
+                    socket.emit('alter_status_music', id);
+                } else if (result.isDenied) {
+                }
+            });         
+            setStatus()
         }
 
         function deleteMusic(item) {
@@ -117,19 +137,32 @@
             lista.map((music, indice) => {
                 const row = document.createElement('tr');
                 const { id } = music;
+
+                let alterarStatus = '';
+                if(music.status == 'open') {
+                    alterarStatus = `
+                        <button 
+                            class=" bg-green-500 text-white px-4 py-2 rounded-lg shadow hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500" 
+                            onclick="alterarStatus('${id}', '${music.music}')">
+                            Finalizar
+                        </button>`
+                } else {
+                    alterarStatus = `<span class="p-3 px-4 text-green-500">Cantada</span>`;
+                }
+                
                 row.innerHTML = `
                     <td>${indice + 1}</td>
                     <td class="text-1xl">${music.name}</td>
                     <td>${music.music}</td>
                     <td>${music.table}</td>
-
                     <td>
+                        ${alterarStatus}
+                        &nbsp;
                         <button 
-                            class="w-full bg-red-500 text-white px-4 py-2 rounded-lg shadow hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500" 
+                            class=" bg-red-500 text-white px-4 py-2 rounded-lg shadow hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500" 
                             onclick="deleteMusic('${id}')">
                             Deletar
                         </button>
-                        
                     </td>
                 `;
                 document.getElementById('music-table').appendChild(row);
@@ -137,6 +170,7 @@
         }
         
         reloadTable()
+
         socket.on('actually', (data) => {
             setStatus("Sincronizando")
             lista = data;

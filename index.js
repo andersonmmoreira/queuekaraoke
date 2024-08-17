@@ -59,12 +59,23 @@ io.on('connection', (socket) => {
         socket.broadcast.emit('actually', lista);
         socket.emit('actually', lista);
     });
+
+    socket.on('alter_status_music', (id) => {
+        const indice = lista.findIndex(item => item.id === id);
+        lista[indice].status = 'finished';
+
+        socket.broadcast.emit('actually', lista);
+        socket.emit('actually', lista);
+    });
+
+    
     
     socket.on('save_music', (data) => {
         const myUUID = uuidv4();
         if(!data.id) {
             console.log(data)
             data.id = myUUID;
+            data.status = 'open';
         }
         
         lista.push(data);
